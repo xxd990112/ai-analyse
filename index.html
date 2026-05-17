@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 产品智能选型工具 - 中文版</title>
+    <style>
+        :root {
+            /* High-End UI Color Palette */
+            --primary: #0055FF; /* Buttons & Primary actions */
+            --primary-hover: #0044CC;
+            --primary-light: #E6EEFF;
+            --secondary: #FF8800; /* TOP CHOICE & Accents */
+            --secondary-light: #FFF3E6;
+            --accent-green: #00C853; /* Pros / Success */
+            --accent-red: #FF3D00; /* Cons / Danger */
+            
+            --bg-main: #F4F7FF; /* Soft bluish grey background */
+            --bg-card: #FFFFFF;
+            --bg-glass: rgba(255, 255, 255, 0.85);
+            
+            --text-main: #333333; /* Dark grey for readability */
+            --text-muted: #666666;
+            --text-light: #999999;
+            
+            --border: #E0E4EC;
+            --border-hover: #C0C8D4;
+            
+            /* High-End Shadows & Effects */
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 12px 24px rgba(0, 85, 255, 0.1);
+            --shadow-glow: 0 0 15px rgba(0, 85, 255, 0.15);
+            
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            
+            --sidebar-width: 300px;
+            --sidebar-collapsed-width: 60px;
+            --header-height: 80px;
+            
+            --font-sans: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-sans);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            transition: background-color 0.3s;
+        }
+
+        /* Layout Structure */
+        .app-container {
+            display: grid;
+            grid-template-areas: 
+                "header header header"
+                "left-sidebar main right-sidebar";
+            grid-template-columns: var(--sidebar-width) 1fr var(--sidebar-width);
+            min-height: 100vh;
+            gap: 24px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Header Styles */
+        header {
+            grid-area: header;
+            background: var(--bg-glass);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 0 40px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-content {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+        }
+
+        .logo-area h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+        }
+
+        .search-area {
+            flex: 1;
+            max-width: 600px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: #FFFFFF;
+            border-radius: var(--radius-md);
+            padding: 4px 4px 4px 16px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .search-box:focus-within {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .search-input {
+            border: none;
+            background: transparent;
+            padding: 10px 0;
+            width: 100%;
+            outline: none;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        /* Sidebars */
+        .sidebar-left, .sidebar-right {
+            padding: 24px;
+            height: calc(100vh - var(--header-height) - 48px);
+            position: sticky;
+            top: calc(var(--header-height) + 24px);
+            overflow-y: auto;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-left { grid-area: left-sidebar; margin-left: 24px; }
+        .sidebar-right { grid-area: right-sidebar; margin-right: 24px; }
+
+        .sidebar-left::-webkit-scrollbar, .sidebar-right::-webkit-scrollbar { width: 4px; }
+        .sidebar-left::-webkit-scrollbar-thumb, .sidebar-right::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        /* Main Content */
+        .main-content {
+            grid-area: main;
+            padding: 0 0 40px 0;
+            min-width: 0; /* Prevent grid blowout */
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Product Grid inside Sidebar */
+        #productGrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Default to 2 columns */
+            gap: 16px;
+            transition: all 0.4s ease;
+        }
+
+        .sidebar-left.comparing #productGrid {
+            grid-template-columns: 1fr; /* Narrow to 1 column during comparison */
+        }
+ 
+        .product-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .product-card.selected {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .card-brand {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            text-transform: uppercase;
+        }
+
+        .card-rating {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .card-name {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .card-price {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        /* Visualization Area */
+        .viz-dashboard {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin: 32px 0;
+        }
+
+        .chart-container {
+            background: var(--bg-main);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .chart-container:hover {
+            transform: scale(1.01);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 24px;
+            color: var(--text-main);
+        }
+
+        /* Buttons & Interactions */
+        .btn {
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 85, 255, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 85, 255, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-light);
+        }
+
+        /* Responsive & Collapsible Logic */
+        .sidebar-toggle {
+            position: absolute;
+            top: 24px;
+            right: -12px;
+            width: 24px;
+            height: 24px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .app-container.left-collapsed {
+            grid-template-columns: var(--sidebar-collapsed-width) 1fr var(--sidebar-width);
+        }
+
+        .app-container.right-collapsed {
+            grid-template-columns: var(--sidebar-width) 1fr var(--sidebar-collapsed-width);
+        }
+
+        .app-container.both-collapsed {
+            grid-template-columns: var(--sidebar-collapsed-width) 1fr var(--sidebar-collapsed-width);
+        }
+
+        .sidebar-left.collapsed, .sidebar-right.collapsed {
+            width: var(--sidebar-collapsed-width);
+            padding: 24px 10px;
+            overflow: hidden;
+        }
+
+        .collapsed .sidebar-content {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            max-width: 600px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: var(--text-main);
+        }
+
+        /* Toast Styles */
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            color: var(--text-main);
+            padding: 16px 24px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            border-left: 4px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .toast.success { border-left-color: var(--accent-green); }
+        .toast.error { border-left-color: var(--accent-red); }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-glass);
+            backdrop-filter: blur(8px);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-card {
+            background: var(--bg-card);
+            padding: 48px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .spinner-modern {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--primary-light);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1200px) {
+            .app-container {
+                grid-template-columns: 260px 1fr 260px;
+                padding: 0 16px;
+            }
+            .sidebar-left { margin-left: 0; }
+            .sidebar-right { margin-right: 0; }
+        }
+
+        @media (max-width: 1024px) {
+            .app-container {
+                grid-template-areas: 
+                    "header header"
+                    "left-sidebar main";
+                grid-template-columns: 280px 1fr;
+            }
+            .sidebar-right {
+                display: none; /* Hide right sidebar on tablets, show as overlay or bottom drawer */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-areas: 
+                    "header"
+                    "main";
+                grid-template-columns: 1fr;
+            }
+            header { padding: 0 20px; }
+            .sidebar-left { display: none; }
+            .chart-grid { grid-template-columns: 1fr; }
+            .header-content { flex-direction: column; height: auto; padding: 16px 0; }
+            .search-area { max-width: 100%; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<div class="app-container" id="appContainer">
+    <header>
+        <div class="header-content">
+            <div class="logo-area">
+                <h1>AI 产品选型大师</h1>
+            </div>
+            <div class="search-area">
+                <div class="search-box">
+                    <input type="text" id="searchInput" class="search-input" placeholder="输入关键词，如 '高性能手机'..." value="">
+                    <button id="searchBtn" class="btn btn-primary" style="padding: 8px 20px; border-radius: 8px;">搜索</button>
+                </div>
+            </div>
+            <div class="brand-tags" style="display: flex; gap: 12px;">
+                <span class="brand-tag" style="cursor:pointer; color:var(--primary); font-weight:700;" onclick="quickSearch('Apple')">Apple</span>
+                <span class="brand-tag" style="cursor:pointer; color:var(--primary); font-weight:700;" onclick="quickSearch('华为')">华为</span>
+                <span class="brand-tag" style="cursor:pointer; color:var(--primary); font-weight:700;" onclick="quickSearch('小米')">小米</span>
+            </div>
+        </div>
+    </header>
+
+    <aside class="sidebar-left" id="sidebarLeft">
+        <div class="sidebar-toggle" id="leftToggle" onclick="toggleSidebar('left')">◀</div>
+        <div class="sidebar-content">
+            <div class="section-title">🔍 搜索结果</div>
+            <div id="productGrid">
+                <!-- Products will be loaded here -->
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="welcomeScreen" style="text-align: center; padding-top: 120px;">
+            <div style="font-size: 5rem; margin-bottom: 24px;">🚀</div>
+            <h2 style="font-weight: 800; margin-bottom: 12px; font-size: 1.8rem;">开启您的智能选型之旅</h2>
+            <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto;">在上方搜索或选择品牌，左侧挑选心仪产品，我们将为您提供全方位的 AI 深度分析报告。</p>
+        </div>
+
+        <div id="dashboard" style="display: none;">
+            <div id="bestChoiceArea"></div>
+            
+            <div class="viz-dashboard">
+                <div class="section-title">📊 数据可视化对比</div>
+                <div class="chart-grid">
+                    <div class="chart-container" onclick="showDetailedComparison()" style="cursor: pointer;">
+                        <div class="chart-title">核心维度分布 (雷达图)</div>
+                        <canvas id="radarCanvas" width="400" height="400"></canvas>
+                        <div style="font-size: 0.8rem; color: var(--primary); margin-top: 16px; font-weight: 700;">点击查看详细参数对比表</div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">综合效能评分 (排行)</div>
+                        <canvas id="barCanvas" width="400" height="400"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div id="analysisArea" style="margin-top: 32px;"></div>
+        </div>
+    </main>
+
+    <aside class="sidebar-right" id="sidebarRight">
+        <div class="sidebar-toggle" id="rightToggle" onclick="toggleSidebar('right')">▶</div>
+        <div class="sidebar-content">
+            <div class="section-title">⚖️ 待对比清单 (<span id="compareCount">0</span>/5)</div>
+            <div id="compareList" style="min-height: 200px; margin-bottom: 24px;">
+                <p style="color: var(--text-light); font-size: 0.9rem; text-align: center; margin-top: 60px;">暂未选择对比产品</p>
+            </div>
+            <button id="sidebarCompareBtn" class="btn btn-primary" style="width: 100%; margin-bottom: 12px;">开始全方位对比</button>
+            <button id="clearBtn" class="btn btn-outline" style="width: 100%; font-size: 0.85rem; border-color: var(--border); color: var(--text-muted);">清空已选</button>
+        </div>
+    </aside>
+</div>
+
+<div id="loading" class="loading-overlay" style="display: none;">
+    <div class="loading-card">
+        <div class="spinner-modern"></div>
+        <p id="loadingText" style="font-weight: 700; color: var(--text-main); margin-top: 20px;">正在搜索相关产品，请稍候...</p>
+    </div>
+</div>
+
+<!-- Modals -->
+<div id="productModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" id="closeModal">&times;</span>
+        <div id="modalBody"></div>
+    </div>
+</div>
+
+<div id="compareModal" class="modal">
+    <div class="modal-content" style="max-width: 1000px; border-radius: 20px;">
+        <span class="close-modal" id="closeCompareModal">&times;</span>
+        <h2 style="font-weight: 800; margin-bottom: 24px; text-align: center;">📊 深度参数对比表</h2>
+        <div id="compareModalBody"></div>
+    </div>
+</div>
+
+<script>
+    // --- 核心状态 ---
+    let allProducts = [];
+    let searchResults = [];
+    let selectedIds = [];
+    let backendUrl = "http://localhost:8000";
+
+    // --- DOM 引用 ---
+    const appContainer = document.getElementById('appContainer');
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const productGrid = document.getElementById('productGrid');
+    const loading = document.getElementById('loading');
+    const dashboard = document.getElementById('dashboard');
+    const welcomeScreen = document.getElementById('welcomeScreen');
+    const bestChoiceArea = document.getElementById('bestChoiceArea');
+    const analysisArea = document.getElementById('analysisArea');
+    const radarCanvas = document.getElementById('radarCanvas');
+    const barCanvas = document.getElementById('barCanvas');
+    const compareCount = document.getElementById('compareCount');
+    const compareList = document.getElementById('compareList');
+    const sidebarCompareBtn = document.getElementById('sidebarCompareBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    
+    const productModal = document.getElementById('productModal');
+    const closeModal = document.getElementById('closeModal');
+    const modalBody = document.getElementById('modalBody');
+    const compareModal = document.getElementById('compareModal');
+    const closeCompareModal = document.getElementById('closeCompareModal');
+    const compareModalBody = document.getElementById('compareModalBody');
+
+    let currentComparisonData = null;
+
+    // --- Sidebar Toggle Logic ---
+    function toggleSidebar(side) {
+        const sidebar = side === 'left' ? document.getElementById('sidebarLeft') : document.getElementById('sidebarRight');
+        const toggle = side === 'left' ? document.getElementById('leftToggle') : document.getElementById('rightToggle');
+        
+        sidebar.classList.toggle('collapsed');
+        
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        
+        if (side === 'left') {
+            appContainer.classList.toggle('left-collapsed', isCollapsed);
+            toggle.innerText = isCollapsed ? '▶' : '◀';
+        } else {
+            appContainer.classList.toggle('right-collapsed', isCollapsed);
+            toggle.innerText = isCollapsed ? '◀' : '▶';
+        }
+
+        // Redraw charts after layout transition
+        setTimeout(() => {
+            if (currentComparisonData) {
+                const products = allProducts.filter(p => selectedIds.includes(p.id));
+                renderComparison(currentComparisonData, products);
+            }
+        }, 400);
+    }
+
+    // --- 工具函数 ---
+    function showToast(message, type = 'info') {
+        const toastContainer = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        const icons = {
+            success: '<span>✓</span>',
+            error: '<span>✕</span>',
+            info: '<span>ℹ</span>'
+        };
+        toast.innerHTML = `${icons[type] || icons.info}<span>${message}</span>`;
+        toastContainer.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            toast.style.transition = 'all 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    function toggleBtnLoading(btn, isLoading, originalText) {
+        if (isLoading) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="btn-loading"></span>';
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    function generateId() {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            return crypto.randomUUID();
+        }
+        return `id_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    }
+
+    function normalizeProducts(products) {
+        const used = new Set();
+        return (products || []).map((p) => {
+            const next = { ...p };
+            if (!next.id) next.id = generateId();
+            while (used.has(next.id)) next.id = generateId();
+            used.add(next.id);
+            return next;
+        });
+    }
+
+    function upsertProducts(products) {
+        (products || []).forEach((np) => {
+            const idx = allProducts.findIndex((p) => p.id === np.id);
+            if (idx >= 0) {
+                allProducts[idx] = np;
+            } else {
+                allProducts.push(np);
+            }
+        });
+    }
+
+    // --- 初始化 ---
+    window.onload = () => {
+        loadFromStorage();
+        if (allProducts.length > 0) {
+            renderGrid();
+            renderSidebar();
+        }
+    };
+
+    function quickSearch(brand) {
+        searchInput.value = brand;
+        performSearch(brand);
+    }
+
+    async function performSearch(query) {
+        if (!query) return;
+        
+        // Reset comparison state when searching new products
+        document.getElementById('sidebarLeft').classList.remove('comparing');
+        dashboard.style.display = 'none';
+        welcomeScreen.style.display = 'block';
+
+        const originalText = '搜索';
+        toggleBtnLoading(searchBtn, true, originalText);
+        
+        loading.style.display = 'flex';
+        document.getElementById('loadingText').innerText = `正在搜索“${query}”相关产品，请稍候...`;
+
+        try {
+            const response = await fetch(`${backendUrl}/api/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query })
+            });
+            
+            const result = await response.json();
+            if (result.status === 'success') {
+                searchResults = normalizeProducts(result.data);
+                upsertProducts(searchResults);
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            console.warn("后端搜索失败:", error);
+            showToast("搜索失败，已载入演示数据", 'info');
+            searchResults = MOCK_DATA;
+        } finally {
+            toggleBtnLoading(searchBtn, false, originalText);
+            loading.style.display = 'none';
+        }
+
+        saveToStorage();
+        renderGrid();
+    }
+
+    function renderProductCard(p) {
+        const isSelected = selectedIds.includes(p.id);
+        const highlights = Object.entries(p.specs || {}).slice(0, 3).map(([k, v]) => `<div>• ${k}: ${v}</div>`).join('');
+
+        return `
+            <div class="product-card ${isSelected ? 'selected' : ''}" onclick="showProductDetails('${p.id}')">
+                <div class="card-header">
+                    <span class="card-brand">${p.brand}</span>
+                    <span class="card-rating">★ ${p.rating}</span>
+                </div>
+                <div class="card-name">${p.name}</div>
+                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+                    <div class="card-price">¥${p.price.replace('¥', '')}</div>
+                    <div style="font-size:0.75rem; color:var(--text-light); font-weight:600;">${p.release_date || ''}</div>
+                </div>
+                <div style="margin-top: 16px;">
+                    <button class="btn ${isSelected ? 'btn-outline' : 'btn-primary'}" 
+                            style="width: 100%; padding: 8px; font-size: 0.8rem;" 
+                            onclick="event.stopPropagation(); toggleSelect('${p.id}')">
+                        ${isSelected ? '从对比中移除' : '加入对比'}
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderGrid() {
+        if (searchResults.length > 0) {
+            productGrid.innerHTML = searchResults.map(p => renderProductCard(p)).join('');
+        } else {
+            productGrid.innerHTML = '';
+        }
+    }
+
+    function renderSidebar() {
+        const selectedProducts = allProducts.filter(p => selectedIds.includes(p.id));
+        compareCount.innerText = selectedIds.length;
+
+        if (selectedProducts.length === 0) {
+            compareList.innerHTML = `<p style="color: var(--text-light); font-size: 0.9rem; text-align: center; margin-top: 60px;">暂未选择对比产品</p>`;
+        } else {
+            compareList.innerHTML = selectedProducts.map(p => `
+                <div class="compare-item" style="display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--border);">
+                    <div style="width:36px; height:36px; background:var(--primary-light); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--primary); font-weight:800;">📱</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.85rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div>
+                        <div style="font-size:0.75rem; color:var(--primary); font-weight:700;">${p.price}</div>
+                    </div>
+                    <span style="cursor:pointer; color:var(--text-light); font-size:1.1rem;" onclick="toggleSelect('${p.id}')">✕</span>
+                </div>
+            `).join('');
+        }
+    }
+
+    function toggleSelect(id) {
+        const p = allProducts.find(prod => prod.id === id);
+        if (selectedIds.includes(id)) {
+            selectedIds = selectedIds.filter(sid => sid !== id);
+        } else {
+            if (selectedIds.length >= 5) {
+                showToast("最多选择5款产品进行对比", 'error');
+                return;
+            }
+            selectedIds.push(id);
+        }
+        saveToStorage();
+        renderGrid();
+        renderSidebar();
+    }
+
+    async function generateComparison() {
+        if (selectedIds.length < 2) {
+            showToast("请至少选择2款产品", 'info');
+            return;
+        }
+
+        const sidebarLeft = document.getElementById('sidebarLeft');
+        sidebarLeft.classList.add('comparing'); // Sidebar narrows to 1 column
+
+        welcomeScreen.style.display = 'none';
+        dashboard.style.display = 'block';
+        
+        const products = allProducts.filter(p => selectedIds.includes(p.id));
+        loading.style.display = 'flex';
+        document.getElementById('loadingText').innerText = "AI 正在生成深度对比报告...";
+
+        try {
+            const response = await fetch(`${backendUrl}/api/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ products: products })
+            });
+            
+            const result = await response.json();
+            if (result.status === 'success') {
+                currentComparisonData = result.data;
+                renderComparison(result.data, products);
+            }
+        } catch (error) {
+            console.error("对比分析失败:", error);
+            showToast("分析失败，请稍后重试", 'error');
+        } finally {
+            loading.style.display = 'none';
+        }
+    }
+
+    function renderComparison(aiData, products) {
+        bestChoiceArea.innerHTML = `
+            <div class="best-choice-card" style="background: linear-gradient(135deg, #001A4D 0%, #0055FF 100%); color:white; padding:40px; border-radius:var(--radius-lg); position:relative; overflow:hidden; box-shadow:var(--shadow-lg);">
+                <div style="background:var(--secondary); color:white; padding:6px 24px; border-radius:var(--radius-full); font-size:0.8rem; font-weight:900; display:inline-block; margin-bottom:20px;">AI 专家推荐</div>
+                <h2 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 16px; letter-spacing:-1px;">${aiData.recommended_product}</h2>
+                <p style="opacity: 0.9; font-size: 1.1rem; line-height: 1.7; max-width: 800px; font-weight:500;">${aiData.comparison_summary}</p>
+                <div style="position:absolute; top:-20px; right:-20px; font-size:12rem; opacity:0.1; transform:rotate(15deg);">🏆</div>
+            </div>
+        `;
+
+        analysisArea.innerHTML = `
+            <div class="analysis-box" style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+                <div class="analysis-item" style="background:#E6FFFA; border:1px solid #B2F5EA; padding:32px; border-radius:var(--radius-md);">
+                    <div style="color:var(--accent-green); font-weight:800; font-size:1.2rem; margin-bottom:20px; display:flex; align-items:center; gap:8px;">✓ 核心优势</div>
+                    <ul style="padding-left: 24px; font-size: 1rem; color: #234E52; line-height:1.8;">
+                        ${aiData.advantages.map(a => `<li style="margin-bottom:12px; font-weight:600;">${a}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="analysis-item" style="background:#FFF5F5; border:1px solid #FED7D7; padding:32px; border-radius:var(--radius-md);">
+                    <div style="color:var(--accent-red); font-weight:800; font-size:1.2rem; margin-bottom:20px; display:flex; align-items:center; gap:8px;">! 注意事项</div>
+                    <ul style="padding-left: 24px; font-size: 1rem; color: #742A2A; line-height:1.8;">
+                        ${aiData.disadvantages.map(d => `<li style="margin-bottom:12px; font-weight:600;">${d}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        `;
+
+        const radarScores = products.map(p => ({
+            name: p.name,
+            dims: aiData.radar_data[p.name] || [70, 70, 70, 70, 70, 70]
+        }));
+        
+        const barScores = products.map(p => {
+            const dims = aiData.radar_data[p.name] || [70, 70, 70, 70, 70, 70];
+            return {
+                name: p.name,
+                total: Math.round(dims.reduce((a, b) => a + b, 0) / dims.length)
+            };
+        }).sort((a, b) => b.total - a.total);
+
+        drawRadar(radarScores);
+        drawBar(barScores);
+        
+        dashboard.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function drawRadar(data) {
+        const ctx = radarCanvas.getContext('2d');
+        const centerX = 200, centerY = 200, radius = 130;
+        const labels = ["价格", "性能", "功能", "外观", "续航", "口碑"];
+        const colors = ["rgba(0, 85, 255, 0.2)", "rgba(0, 200, 83, 0.2)", "rgba(255, 136, 0, 0.2)"];
+        const borderColors = ["#0055FF", "#00C853", "#FF8800"];
+
+        ctx.clearRect(0, 0, 400, 400);
+
+        ctx.strokeStyle = "#E0E4EC";
+        ctx.setLineDash([5, 5]);
+        for (let i = 1; i <= 4; i++) {
+            ctx.beginPath();
+            const r = (radius / 4) * i;
+            for (let j = 0; j < 6; j++) {
+                const angle = (Math.PI / 3) * j - Math.PI / 2;
+                ctx.lineTo(centerX + r * Math.cos(angle), centerY + r * Math.sin(angle));
+            }
+            ctx.closePath();
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+
+        labels.forEach((l, i) => {
+            const angle = (Math.PI / 3) * i - Math.PI / 2;
+            ctx.fillStyle = "#666666";
+            ctx.font = "bold 13px Inter";
+            ctx.textAlign = "center";
+            ctx.fillText(l, centerX + (radius + 30) * Math.cos(angle), centerY + (radius + 15) * Math.sin(angle));
+        });
+
+        data.forEach((p, idx) => {
+            ctx.beginPath();
+            p.dims.forEach((d, i) => {
+                const angle = (Math.PI / 3) * i - Math.PI / 2;
+                const r = (radius * d) / 100;
+                const x = centerX + r * Math.cos(angle);
+                const y = centerY + r * Math.sin(angle);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.closePath();
+            ctx.fillStyle = colors[idx % 3];
+            ctx.fill();
+            ctx.strokeStyle = borderColors[idx % 3];
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        });
+    }
+
+    function drawBar(data) {
+        const ctx = barCanvas.getContext('2d');
+        const padding = 60, barHeight = 28, gap = 45;
+        ctx.clearRect(0, 0, 400, 400);
+
+        data.forEach((p, i) => {
+            const y = padding + i * (barHeight + gap);
+            const width = (p.total / 100) * 280;
+
+            ctx.fillStyle = "#F0F2F5";
+            ctx.beginPath();
+            ctx.roundRect(40, y, 280, barHeight, 6);
+            ctx.fill();
+
+            const grad = ctx.createLinearGradient(40, 0, 40 + width, 0);
+            grad.addColorStop(0, "#0055FF");
+            grad.addColorStop(1, "#6699FF");
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.roundRect(40, y, width, barHeight, 6);
+            ctx.fill();
+
+            ctx.fillStyle = "#333333";
+            ctx.font = "bold 14px Inter";
+            ctx.textAlign = "left";
+            ctx.fillText(p.name, 40, y - 12);
+            
+            ctx.fillStyle = "#0055FF";
+            ctx.font = "bold 15px Inter";
+            ctx.textAlign = "right";
+            ctx.fillText(p.total + " PTS", 320, y + barHeight + 20);
+        });
+    }
+
+    function showDetailedComparison() {
+        if (!currentComparisonData) return;
+        const products = allProducts.filter(p => selectedIds.includes(p.id));
+        const detailedData = currentComparisonData.detailed_comparison;
+        
+        let html = '<table style="width:100%; border-collapse: separate; border-spacing: 0; font-size: 0.95rem; border:1px solid var(--border); border-radius:12px; overflow:hidden;">';
+        html += '<tr style="background:#F4F7FF"><th style="padding:20px; border-bottom:2px solid var(--border); text-align:left; font-weight:800;">对比维度</th>';
+        products.forEach(p => html += `<th style="padding:20px; border-bottom:2px solid var(--border); text-align:center; font-weight:800;">${p.name}</th>`);
+        html += '</tr>';
+
+        for (const [dim, vals] of Object.entries(detailedData)) {
+            html += `<tr><td style="padding:16px; border-bottom:1px solid var(--border); font-weight:700; color:var(--text-muted); background:#FAFBFF">${dim}</td>`;
+            products.forEach(p => {
+                const val = vals[p.name] || '-';
+                html += `<td style="padding:16px; border-bottom:1px solid var(--border); text-align:center; font-weight:500;">${val}</td>`;
+            });
+            html += '</tr>';
+        }
+        html += '</table>';
+        compareModalBody.innerHTML = html;
+        compareModal.style.display = 'flex';
+    }
+
+    // 事件绑定
+    searchBtn.onclick = () => performSearch(searchInput.value.trim());
+    searchInput.onkeypress = (e) => { if (e.key === 'Enter') searchBtn.onclick(); };
+    sidebarCompareBtn.onclick = generateComparison;
+    clearBtn.onclick = () => { 
+        selectedIds = []; 
+        renderGrid(); 
+        renderSidebar(); 
+        dashboard.style.display='none'; 
+        welcomeScreen.style.display='block'; 
+        document.getElementById('sidebarLeft').classList.remove('comparing'); // Restore 2 columns
+    };
+    closeCompareModal.onclick = () => compareModal.style.display = 'none';
+    
+    function showProductDetails(id) {
+        const p = searchResults.find(prod => prod.id === id) || allProducts.find(prod => prod.id === id);
+        if (!p) return;
+        let specsHtml = '<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:24px;">';
+        Object.entries(p.specs || {}).forEach(([k, v]) => {
+            specsHtml += `<div style="padding:16px; background:var(--bg-main); border-radius:12px; border:1px solid var(--border);"><span style="color:var(--text-muted); font-size:0.85rem; font-weight:600;">${k}</span><div style="font-weight:800; font-size:1rem; margin-top:4px;">${v}</div></div>`;
+        });
+        specsHtml += '</div>';
+
+        modalBody.innerHTML = `
+            <div style="text-align:center; padding-bottom:24px; border-bottom:1px solid var(--border);">
+                <span class="card-brand" style="margin-bottom:16px; display:inline-block;">${p.brand}</span>
+                <h2 style="margin:8px 0; font-size:1.8rem; font-weight:800;">${p.name}</h2>
+                <div class="card-price" style="font-size:1.8rem; margin-top:8px;">¥${p.price.replace('¥', '')}</div>
+            </div>
+            ${specsHtml}
+            <button class="btn btn-primary" style="width:100%; margin-top:32px; padding:16px;" onclick="toggleSelect('${p.id}'); document.getElementById('productModal').style.display='none'">加入对比清单</button>
+        `;
+        productModal.style.display = 'flex';
+    }
+
+    closeModal.onclick = () => productModal.style.display = 'none';
+
+    function saveToStorage() {
+        localStorage.setItem('zh_compare_products', JSON.stringify(allProducts));
+        localStorage.setItem('zh_compare_selected', JSON.stringify(selectedIds));
+    }
+
+    function loadFromStorage() {
+        const p = localStorage.getItem('zh_compare_products');
+        const s = localStorage.getItem('zh_compare_selected');
+        if (p) allProducts = JSON.parse(p);
+        if (s) selectedIds = JSON.parse(s);
+    }
+
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+        CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+            if (w < 2 * r) r = w / 2;
+            if (h < 2 * r) r = h / 2;
+            this.beginPath();
+            this.moveTo(x + r, y);
+            this.arcTo(x + w, y, x + w, y + h, r);
+            this.arcTo(x + w, y + h, x, y + h, r);
+            this.arcTo(x, y + h, x, y, r);
+            this.arcTo(x, y, x + w, y, r);
+            this.closePath();
+            return this;
+        };
+    }
+
+    const MOCK_DATA = [
+        { id: "m1", name: "华为 Mate 60 Pro", brand: "华为", price: "¥6999", rating: 4.9, specs: { "处理器": "麒麟 9000S", "屏幕": "6.82英寸 OLED", "电池": "5000mAh" }, url: "#" },
+        { id: "m2", name: "小米 14 Ultra", brand: "小米", price: "¥6499", rating: 4.8, specs: { "处理器": "骁龙 8 Gen3", "屏幕": "6.73英寸 AMOLED", "电池": "5300mAh" }, url: "#" },
+        { id: "m3", name: "iPhone 15 Pro Max", brand: "Apple", price: "¥9999", rating: 4.6, specs: { "处理器": "A17 Pro", "屏幕": "6.7英寸 XDR", "电池": "4422mAh" }, url: "#" }
+    ];
+</script>
+
+</body>
+</html>
