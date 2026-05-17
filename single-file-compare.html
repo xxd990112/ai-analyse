@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>产品对比推荐器</title>
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --best-color: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            color: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Card Layout */
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border-color);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        
+        .btn-outline { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-muted); }
+        .btn-outline:hover { background-color: var(--bg-color); color: var(--text-main); }
+
+        .btn-danger { color: var(--danger-color); padding: 6px; background: transparent; }
+        .btn-danger:hover { background: #fee2e2; }
+
+        /* Dimension Grid */
+        .dimension-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .dimension-item {
+            background: var(--bg-color);
+            padding: 16px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .weight-stars {
+            color: #fbbf24;
+            letter-spacing: 2px;
+        }
+
+        /* Product Table */
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        th, td {
+            padding: 16px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: var(--bg-color);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .product-name-cell {
+            text-align: left;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* Inputs */
+        .score-input {
+            width: 60px;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .score-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Results Chart */
+        .chart-container {
+            margin-top: 20px;
+        }
+
+        .chart-row {
+            margin-bottom: 20px;
+        }
+
+        .chart-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .progress-bg {
+            height: 12px;
+            background-color: var(--bg-color);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 6px;
+            transition: width 0.5s ease-out;
+        }
+
+        .best-product .progress-fill {
+            background-color: var(--best-color);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .best-badge {
+            display: none;
+            background-color: var(--best-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            margin-left: 8px;
+        }
+
+        .best-product .best-badge { display: inline-block; }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .dimension-list { grid-template-columns: 1fr; }
+            .btn { width: auto; }
+            .section-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .section-header .btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>产品对比推荐器</h1>
+        <p class="subtitle">科学量化分析，帮您选出最心仪的产品</p>
+    </header>
+
+    <!-- 维度设置 -->
+    <section class="card">
+        <div class="section-header">
+            <h2 class="section-title">⚖️ 比较维度 & 权重</h2>
+            <button class="btn btn-primary" onclick="openModal('dimension')">
+                <span>+</span> 添加维度
+            </button>
+        </div>
+        <div id="dimensionList" class="dimension-list">
+            <!-- Dimensions will be rendered here -->
+        </div>
+    </section>
+
+    <!-- 产品评分 -->
+    <section class="card">
+        <div class="section-header">
+            <h2 class="section-title">📱 产品评分 (1-5分)</h2>
+            <button class="btn btn-primary" onclick="openModal('product')">
+                <span>+</span> 添加产品
+            </button>
+        </div>
+        <div class="table-wrapper" id="productTableWrapper">
+            <!-- Table will be rendered here -->
+        </div>
+    </section>
+
+    <!-- 推荐结果 -->
+    <section class="card">
+        <div class="section-header">
+            <h2 class="section-title">🏆 智能推荐结果</h2>
+        </div>
+        <div id="resultContent" class="chart-container">
+            <!-- Chart will be rendered here -->
+        </div>
+    </section>
+</div>
+
+<!-- Modal -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle" class="modal-title">添加维度</h3>
+        <div class="form-group">
+            <label id="labelName" class="form-label">名称</label>
+            <input type="text" id="inputName" class="form-input" placeholder="请输入名称">
+        </div>
+        <div class="form-group" id="weightGroup">
+            <label class="form-label">权重 (1-5星重要程度)</label>
+            <select id="inputWeight" class="form-input">
+                <option value="1">⭐ (非常次要)</option>
+                <option value="2">⭐⭐ (次要)</option>
+                <option value="3" selected>⭐⭐⭐ (中等)</option>
+                <option value="4">⭐⭐⭐⭐ (重要)</option>
+                <option value="5">⭐⭐⭐⭐⭐ (非常重要)</option>
+            </select>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal()">取消</button>
+            <button class="btn btn-primary" onclick="handleSave()">保存</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 数据结构
+    let data = {
+        dimensions: [],
+        products: []
+    };
+
+    // 默认示例数据
+    const exampleData = {
+        dimensions: [
+            { id: 1, name: '价格', weight: 5 },
+            { id: 2, name: '性能', weight: 4 },
+            { id: 3, name: '相机', weight: 3 },
+            { id: 4, name: '续航', weight: 4 }
+        ],
+        products: [
+            { id: 1, name: '手机 A', scores: { 1: 5, 2: 3, 3: 4, 4: 5 } },
+            { id: 2, name: '手机 B', scores: { 1: 3, 2: 5, 3: 5, 4: 3 } },
+            { id: 3, name: '手机 C', scores: { 1: 4, 2: 4, 3: 3, 4: 4 } }
+        ]
+    };
+
+    let currentModalType = ''; // 'dimension' or 'product'
+
+    // 初始化
+    function init() {
+        const savedData = localStorage.getItem('product_comparison_data');
+        if (savedData) {
+            data = JSON.parse(savedData);
+        } else {
+            data = JSON.parse(JSON.stringify(exampleData));
+        }
+        render();
+    }
+
+    // 保存到本地存储
+    function saveData() {
+        localStorage.setItem('product_comparison_data', JSON.stringify(data));
+        render();
+    }
+
+    // 渲染页面
+    function render() {
+        renderDimensions();
+        renderProducts();
+        renderResults();
+    }
+
+    // 渲染维度
+    function renderDimensions() {
+        const list = document.getElementById('dimensionList');
+        if (data.dimensions.length === 0) {
+            list.innerHTML = `<div class="empty-state"><span class="empty-icon">📏</span>请先添加比较维度</div>`;
+            return;
+        }
+
+        list.innerHTML = data.dimensions.map(d => `
+            <div class="dimension-item">
+                <div>
+                    <div style="font-weight: 700;">${d.name}</div>
+                    <div class="weight-stars">${'⭐'.repeat(d.weight)}</div>
+                </div>
+                <button class="btn-danger" onclick="deleteDimension(${d.id})" title="删除">🗑️</button>
+            </div>
+        `).join('');
+    }
+
+    // 渲染产品表格
+    function renderProducts() {
+        const wrapper = document.getElementById('productTableWrapper');
+        if (data.products.length === 0 || data.dimensions.length === 0) {
+            wrapper.innerHTML = `<div class="empty-state"><span class="empty-icon">✨</span>添加产品和维度后开始评分</div>`;
+            return;
+        }
+
+        let html = `<table><thead><tr><th class="product-name-cell">产品名称</th>`;
+        data.dimensions.forEach(d => {
+            html += `<th>${d.name}</th>`;
+        });
+        html += `<th>操作</th></tr></thead><tbody>`;
+
+        data.products.forEach(p => {
+            html += `<tr><td class="product-name-cell">${p.name}</td>`;
+            data.dimensions.forEach(d => {
+                const score = p.scores[d.id] || 3;
+                html += `<td><input type="number" min="1" max="5" class="score-input" value="${score}" onchange="updateScore(${p.id}, ${d.id}, this.value)"></td>`;
+            });
+            html += `<td><button class="btn-danger" onclick="deleteProduct(${p.id})">🗑️</button></td></tr>`;
+        });
+
+        html += `</tbody></table>`;
+        wrapper.innerHTML = html;
+    }
+
+    // 渲染结果图表
+    function renderResults() {
+        const content = document.getElementById('resultContent');
+        if (data.products.length === 0 || data.dimensions.length === 0) {
+            content.innerHTML = `<div class="empty-state">等待评分数据...</div>`;
+            return;
+        }
+
+        // 计算总分
+        const results = data.products.map(p => {
+            let totalScore = 0;
+            data.dimensions.forEach(d => {
+                const score = p.scores[d.id] || 0;
+                totalScore += score * d.weight;
+            });
+            return { name: p.name, score: totalScore };
+        });
+
+        const maxScore = Math.max(...results.map(r => r.score));
+        const totalPossible = data.dimensions.reduce((acc, d) => acc + d.weight * 5, 0);
+
+        content.innerHTML = results.map(r => {
+            const isBest = r.score === maxScore && maxScore > 0;
+            const percentage = (r.score / totalPossible) * 100;
+            
+            return `
+                <div class="chart-row ${isBest ? 'best-product' : ''}">
+                    <div class="chart-info">
+                        <span>${r.name} <span class="best-badge">最佳推荐</span></span>
+                        <span>${r.score} 分</span>
+                    </div>
+                    <div class="progress-bg">
+                        <div class="progress-fill" style="width: ${percentage}%"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // 操作逻辑
+    function updateScore(productId, dimensionId, value) {
+        const product = data.products.find(p => p.id === productId);
+        if (product) {
+            product.scores[dimensionId] = parseInt(value);
+            saveData();
+        }
+    }
+
+    function deleteDimension(id) {
+        if (confirm('确定删除该维度吗？这将清除所有产品在该维度下的评分。')) {
+            data.dimensions = data.dimensions.filter(d => d.id !== id);
+            data.products.forEach(p => delete p.scores[id]);
+            saveData();
+        }
+    }
+
+    function deleteProduct(id) {
+        if (confirm('确定删除该产品吗？')) {
+            data.products = data.products.filter(p => p.id !== id);
+            saveData();
+        }
+    }
+
+    // Modal 逻辑
+    function openModal(type) {
+        currentModalType = type;
+        const modal = document.getElementById('modal');
+        const title = document.getElementById('modalTitle');
+        const label = document.getElementById('labelName');
+        const weightGroup = document.getElementById('weightGroup');
+        const input = document.getElementById('inputName');
+
+        input.value = '';
+        modal.style.display = 'flex';
+
+        if (type === 'dimension') {
+            title.innerText = '添加比较维度';
+            label.innerText = '维度名称 (如：价格、续航)';
+            weightGroup.style.display = 'block';
+        } else {
+            title.innerText = '添加对比产品';
+            label.innerText = '产品名称 (如：iPhone 15)';
+            weightGroup.style.display = 'none';
+        }
+        input.focus();
+    }
+
+    function closeModal() {
+        document.getElementById('modal').style.display = 'none';
+    }
+
+    function handleSave() {
+        const name = document.getElementById('inputName').value.trim();
+        if (!name) return alert('请输入名称');
+
+        if (currentModalType === 'dimension') {
+            const weight = parseInt(document.getElementById('inputWeight').value);
+            const newDim = { id: Date.now(), name, weight };
+            data.dimensions.push(newDim);
+            // 给现有产品初始化该维度分数为 3
+            data.products.forEach(p => p.scores[newDim.id] = 3);
+        } else {
+            const newProd = { id: Date.now(), name, scores: {} };
+            // 初始化该产品在所有维度下的分数为 3
+            data.dimensions.forEach(d => newProd.scores[d.id] = 3);
+            data.products.push(newProd);
+        }
+
+        saveData();
+        closeModal();
+    }
+
+    // 点击外部关闭 Modal
+    window.onclick = function(event) {
+        const modal = document.getElementById('modal');
+        if (event.target == modal) closeModal();
+    }
+
+    // 启动
+    init();
+</script>
+
+</body>
+</html>
